@@ -1,2 +1,107 @@
 use covidHistorico
 select* from datoscovid
+/***************************************** 
+Número de consulta. 12. Listar total de casos negativos por estado en los años 2020 y 2021. 
+Requisitos:  
+Significado de los valores de los catálogos. 
+Responsable de la consulta.  
+Comentarios: -- aquí, explicar las instrucciones adicionales  
+Utilizadas y no explicadas en clase.    
+*****************************************/  
+
+  
+/***************************************** 
+Número de consulta.	 13. Listar porcentajes de casos confirmados por género en el rango de edades de 20 a 30 años, 
+						de 31 a 40 años, de 41 a 50 años, de 51 a 60 años y mayores a 60 años a nivel nacional. 
+Requisitos:  ninguno
+Significado de los valores de los catálogos; RESULTADO_LAB = '1' = POSITIVO A SARS-COV-2 , FECHA_DEF = '9999-99-99' = No murio
+Responsable de la consulta.  oscar daniel de jesus lucio
+Comentarios: -- CAST =
+				DECIMAL = 
+				THEN =
+				CASE =
+*****************************************/ 
+SELECT 
+    -- Promedios por grupo de edad y género
+    CAST(hombre_edad_20_30 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_20_30,
+    CAST(hombre_edad_31_40 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_31_40,
+    CAST(hombre_edad_41_50 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_41_50,
+    CAST(hombre_edad_51_60 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_51_60,
+    CAST(hombre_edad_mayor_60 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_mayor_60,	
+    CAST(mujer_edad_20_30 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_20_30,
+    CAST(mujer_edad_31_40 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_31_40,
+    CAST(mujer_edad_41_50 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_41_50,
+    CAST(mujer_edad_51_60 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_51_60,
+    CAST(mujer_edad_mayor_60 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_mayor_60, 
+
+    -- Sumas de hombres, mujeres y total de casos
+    hombre_total,
+    mujer_total,
+    total_casos,
+
+    -- Promedio de cada grupo sobre el total
+    CAST(hombre_total * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_Hombres,
+    CAST(mujer_total * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_Mujeres
+
+FROM (
+    SELECT 
+        -- Conteo de hombres por grupo de edad
+        COUNT(CASE WHEN edad BETWEEN 20 AND 30 AND SEXO = '1' THEN 1 END) AS hombre_edad_20_30,
+        COUNT(CASE WHEN edad BETWEEN 31 AND 40 AND SEXO = '1' THEN 1 END) AS hombre_edad_31_40,
+        COUNT(CASE WHEN edad BETWEEN 41 AND 50 AND SEXO = '1' THEN 1 END) AS hombre_edad_41_50,
+        COUNT(CASE WHEN edad BETWEEN 51 AND 60 AND SEXO = '1' THEN 1 END) AS hombre_edad_51_60,
+        COUNT(CASE WHEN edad > 60 AND SEXO = '1' THEN 1 END) AS hombre_edad_mayor_60,
+
+        -- Conteo de mujeres por grupo de edad
+        COUNT(CASE WHEN edad BETWEEN 20 AND 30 AND SEXO = '2' THEN 1 END) AS mujer_edad_20_30,
+        COUNT(CASE WHEN edad BETWEEN 31 AND 40 AND SEXO = '2' THEN 1 END) AS mujer_edad_31_40,
+        COUNT(CASE WHEN edad BETWEEN 41 AND 50 AND SEXO = '2' THEN 1 END) AS mujer_edad_41_50,
+        COUNT(CASE WHEN edad BETWEEN 51 AND 60 AND SEXO = '2' THEN 1 END) AS mujer_edad_51_60,
+        COUNT(CASE WHEN edad > 60 AND SEXO = '2' THEN 1 END) AS mujer_edad_mayor_60,
+
+        -- Suma total de hombres y mujeres
+        COUNT(CASE WHEN SEXO = '1' THEN 1 END) AS hombre_total,
+        COUNT(CASE WHEN SEXO = '2' THEN 1 END) AS mujer_total,
+
+        -- Total de casos (hombres + mujeres)
+        COUNT(*) AS total_casos
+
+    FROM datoscovid
+) AS T;
+
+/***************************************** 
+Número de consulta.	 14 
+Requisitos:  ninguno
+Significado de los valores de los catálogos; RESULTADO_LAB = '1' = POSITIVO A SARS-COV-2 , FECHA_DEF = '9999-99-99' = No murio
+Responsable de la consulta.  oscar daniel de jesus lucio
+Comentarios: -- WHIT =
+				UNION = 
+				UNION ALL =
+*****************************************/ 
+
+WITH conteo AS (
+    SELECT 
+        'TODOS' AS Rangos_de_edad, COUNT(*) AS casos FROM datoscovid 
+        WHERE FECHA_INGRESO < '2022-01-01' AND RESULTADO_LAB = '1' AND FECHA_DEF != '9999-99-99'
+    UNION ALL
+    SELECT 'infantes', COUNT(*) FROM datoscovid 
+        WHERE EDAD < 12 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
+    UNION ALL
+    SELECT 'adolescencia', COUNT(*) FROM datoscovid 
+        WHERE EDAD BETWEEN 13 AND 18 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
+    UNION ALL
+    SELECT 'adultez_joven', COUNT(*) FROM datoscovid 
+        WHERE EDAD BETWEEN 19 AND 39 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
+    UNION ALL
+    SELECT 'madurez', COUNT(*) FROM datoscovid 
+        WHERE EDAD BETWEEN 40 AND 49 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
+    UNION ALL
+    SELECT 'adultez_tardia', COUNT(*) FROM datoscovid 
+        WHERE EDAD BETWEEN 50 AND 79 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
+    UNION ALL
+    SELECT 'vejez', COUNT(*) FROM datoscovid 
+        WHERE EDAD > 80 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
+)
+SELECT * FROM conteo
+ORDER BY casos DESC;
+
