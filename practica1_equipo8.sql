@@ -67,6 +67,24 @@ FROM Ranking
 WHERE rn = 1;
 
 
+3.-
+4.-
+5.-
+
+/*****************************************
+ 6.- Listar el total de casos confirmados/sospechosos por estado en cada uno de los años registrados en la base de datos.
+ Requisitos:
+ Significado de los valores de los catálogos.
+ Responsable de la consulta: Pérez Iturbe Carolina
+ Comentarios: Sin comentarios
+*****************************************/ 
+select year(FECHA_INGRESO) as año, count(*) num_casos, ENTIDAD_RES
+from datoscovid
+where CLASIFICACION_FINAL in ('1', '2','3','7') 
+group by year(FECHA_INGRESO), ENTIDAD_RES
+order by año, ENTIDAD_RES asc
+7.-
+
 
 
 /***************************************** 
