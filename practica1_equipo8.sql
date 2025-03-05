@@ -1,5 +1,74 @@
 use covidHistorico
 select* from datoscovid
+/*****************************************
+1.- Listar el top 5 de las entidades con más casos confirmados por cada uno de los años registrados en la base de datos.
+ Requisitos:
+ Significado de los valores de los catálogos.
+ Responsable de la consulta: Pérez Iturbe Carolina
+ Comentarios: 
+-ROW_NUMBER(): Enumera los resultados de un conjunto de resultados. Concretamente, devuelve el número secuencial de una fila dentro de una 
+partición de un conjunto de resultados, empezando por 1 para la primera fila de cada partición.
+-OVER: Define una ventana o un conjunto especificado por el usuario de filas dentro de un conjunto de resultados de consulta.
+-PARTITION BY: Divide el conjunto de resultados de la consulta en particiones. La función se aplica a cada partición por separado y el cálculo
+se reinicia para cada partición.
+
+*****************************************/ 
+
+WITH Ranking AS (
+    SELECT 
+        ENTIDAD_RES, 
+        YEAR(FECHA_INGRESO) AS año, 
+        COUNT(*) AS num_casos_confirmados,
+        ROW_NUMBER() OVER (PARTITION BY YEAR(FECHA_INGRESO) ORDER BY COUNT(*) DESC) AS rank
+    FROM datoscovid
+    WHERE CLASIFICACION_FINAL IN ('1', '2', '3')
+    GROUP BY ENTIDAD_RES, YEAR(FECHA_INGRESO)
+)
+SELECT ENTIDAD_RES, año, num_casos_confirmados
+FROM Ranking
+WHERE rank <= 5
+ORDER BY año, rank;
+
+
+/*****************************************
+2.-Listar el municipio con mas casos confirmados recuperados por estado y por año.
+Requisitos:
+Significado de los valores de los catálogos.
+Responsable de la consulta: Pérez Iturbe Carolina
+Comentarios:
+-ROW_NUMBER(): Enumera los resultados de un conjunto de resultados. Concretamente, devuelve el número secuencial de una fila dentro de una 
+partición de un conjunto de resultados, empezando por 1 para la primera fila de cada partición.
+-OVER: Define una ventana o un conjunto especificado por el usuario de filas dentro de un conjunto de resultados de consulta.
+-PARTITION BY: Divide el conjunto de resultados de la consulta en particiones. La función se aplica a cada partición por separado y el 
+cálculo se reinicia para cada partición.
+*****************************************/ 
+WITH CasosRecuperados AS (
+    SELECT 
+        YEAR(FECHA_INGRESO) AS año,
+        ENTIDAD_RES,
+        MUNICIPIO_RES,
+        COUNT(*) AS num_casos_recuperados
+    FROM datoscovid
+    WHERE CLASIFICACION_FINAL IN ('1', '2', '3') 
+          AND FECHA_DEF = '9999-99-99'  -- Pacientes recuperados
+    GROUP BY YEAR(FECHA_INGRESO), ENTIDAD_RES, MUNICIPIO_RES
+),
+Ranking AS (
+    SELECT 
+        año,
+        ENTIDAD_RES,
+        MUNICIPIO_RES,
+        num_casos_recuperados,
+        ROW_NUMBER() OVER (PARTITION BY año, ENTIDAD_RES ORDER BY num_casos_recuperados DESC) AS rn
+    FROM CasosRecuperados
+)
+SELECT año, ENTIDAD_RES, MUNICIPIO_RES, num_casos_recuperados
+FROM Ranking
+WHERE rn = 1;
+
+
+
+
 /***************************************** 
 Número de consulta. 12. Listar total de casos negativos por estado en los años 2020 y 2021. 
 Requisitos:  
