@@ -1,24 +1,31 @@
 use covidHistorico
 select* from datoscovid
+use covidHistorico
 /*****************************************
 1.- Listar el top 5 de las entidades con más casos confirmados por cada uno de los años registrados en la base de datos.
  Requisitos:
- Significado de los valores de los catálogos.
+ Significado de los valores de los catálogos:
+ ENTIDAD_RES: Identifica la entidad de residencia del paciente.
+ FECHA_INGRESO: Identifica la fecha de ingreso del paciente a la unidad de atención.
+ CLASIFICACION_FINAL: Identifica si el paciente es un caso de COVID-19 según el catálogo "CLASIFICACION_FINAL_COVID".
+1: CASO DE COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA,
+2:CASO DE COVID-19 CONFIRMADO POR COMITÉ DE  DICTAMINACIÓN,
+3:CASO DE SARS-COV-2  CONFIRMADO
  Responsable de la consulta: Pérez Iturbe Carolina
  Comentarios: 
--ROW_NUMBER(): Enumera los resultados de un conjunto de resultados. Concretamente, devuelve el número secuencial de una fila dentro de una 
-partición de un conjunto de resultados, empezando por 1 para la primera fila de cada partición.
--OVER: Define una ventana o un conjunto especificado por el usuario de filas dentro de un conjunto de resultados de consulta.
--PARTITION BY: Divide el conjunto de resultados de la consulta en particiones. La función se aplica a cada partición por separado y el cálculo
-se reinicia para cada partición.
+-ROW_NUMBER(): Enumera los resultados de un conjunto de resultados.
+Concretamente, devuelve el número secuencial de una fila dentro de una partición
+de un conjunto de resultados, empezando por 1 para la primera fila de cada partición.
+-OVER: Define una ventana o un conjunto especificado por el usuario de
+filas dentro de un conjunto de resultados de consulta.
+-PARTITION BY: Divide el conjunto de resultados de la consulta en particiones. La 
+función se aplica a cada partición por separado y el cálculo se reinicia para cada partición.
 
 *****************************************/ 
 
 WITH Ranking AS (
     SELECT 
-        ENTIDAD_RES, 
-        YEAR(FECHA_INGRESO) AS año, 
-        COUNT(*) AS num_casos_confirmados,
+		ENTIDAD_RES, YEAR(FECHA_INGRESO) AS año, COUNT(*) AS num_casos_confirmados,
         ROW_NUMBER() OVER (PARTITION BY YEAR(FECHA_INGRESO) ORDER BY COUNT(*) DESC) AS rank
     FROM datoscovid
     WHERE CLASIFICACION_FINAL IN ('1', '2', '3')
@@ -33,55 +40,130 @@ ORDER BY año, rank;
 /*****************************************
 2.-Listar el municipio con mas casos confirmados recuperados por estado y por año.
 Requisitos:
-Significado de los valores de los catálogos.
+Significado de los valores de los catálogos:
+ENTIDAD_RES: Identifica la entidad de residencia del paciente.
+FECHA_INGRESO: Identifica la fecha de ingreso del paciente a la unidad de atención.
+CLASIFICACION_FINAL: Identifica si el paciente es un caso de COVID-19 según el catálogo "CLASIFICACION_FINAL_COVID".
+1: CASO DE COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA,
+2:CASO DE COVID-19 CONFIRMADO POR COMITÉ DE  DICTAMINACIÓN,
+3:CASO DE SARS-COV-2  CONFIRMADO
+FECHA_DEF:Identifica la fecha en que el paciente falleció, en caso de recuperación se coloca 9999-99-99
+MUNICIPIO_RES:Identifica el municipio de residencia del paciente.
 Responsable de la consulta: Pérez Iturbe Carolina
 Comentarios:
--ROW_NUMBER(): Enumera los resultados de un conjunto de resultados. Concretamente, devuelve el número secuencial de una fila dentro de una 
-partición de un conjunto de resultados, empezando por 1 para la primera fila de cada partición.
--OVER: Define una ventana o un conjunto especificado por el usuario de filas dentro de un conjunto de resultados de consulta.
--PARTITION BY: Divide el conjunto de resultados de la consulta en particiones. La función se aplica a cada partición por separado y el 
-cálculo se reinicia para cada partición.
+-ROW_NUMBER(): Enumera los resultados de un conjunto de resultados.
+Concretamente, devuelve el número secuencial de una fila dentro de una partición
+de un conjunto de resultados, empezando por 1 para la primera fila de cada partición.
+-OVER: Define una ventana o un conjunto especificado por el usuario de
+filas dentro de un conjunto de resultados de consulta.
+-PARTITION BY: Divide el conjunto de resultados de la consulta en particiones. La 
+función se aplica a cada partición por separado y el cálculo se reinicia para cada partición.
 *****************************************/ 
 WITH CasosRecuperados AS (
     SELECT 
-        YEAR(FECHA_INGRESO) AS año,
-        ENTIDAD_RES,
-        MUNICIPIO_RES,
-        COUNT(*) AS num_casos_recuperados
+        YEAR(FECHA_INGRESO) AS año, ENTIDAD_RES, MUNICIPIO_RES, COUNT(*) AS num_casos_recuperados
     FROM datoscovid
-    WHERE CLASIFICACION_FINAL IN ('1', '2', '3') 
-          AND FECHA_DEF = '9999-99-99'  -- Pacientes recuperados
-    GROUP BY YEAR(FECHA_INGRESO), ENTIDAD_RES, MUNICIPIO_RES
+    WHERE 
+		  CLASIFICACION_FINAL IN ('1', '2', '3') 
+          AND FECHA_DEF = '9999-99-99'  
+    GROUP BY 
+			YEAR(FECHA_INGRESO), ENTIDAD_RES, MUNICIPIO_RES
 ),
 Ranking AS (
     SELECT 
-        año,
-        ENTIDAD_RES,
-        MUNICIPIO_RES,
-        num_casos_recuperados,
+        año, ENTIDAD_RES, MUNICIPIO_RES, num_casos_recuperados,
         ROW_NUMBER() OVER (PARTITION BY año, ENTIDAD_RES ORDER BY num_casos_recuperados DESC) AS rn
-    FROM CasosRecuperados
+    FROM 
+		CasosRecuperados
 )
-SELECT año, ENTIDAD_RES, MUNICIPIO_RES, num_casos_recuperados
-FROM Ranking
-WHERE rn = 1;
+SELECT 
+	año, ENTIDAD_RES, MUNICIPIO_RES, num_casos_recuperados
+FROM 
+	Ranking
+WHERE 
+	rn = 1;
 
-
-3.-
-4.-
 /*****************************************
-5.- Listar los estados con más casos recuperados con neumonia.
+3.-Listar el porcentaje de casos confirmados en cada una de las siguientes  morbilidades a nivel nacional: diabetes, obesidad e hipertensión.
 Requisitos:
-Significado de los valores de los catálogos.
+Significado de los valores de los catálogos:
+CLASIFICACION_FINAL: Identifica si el paciente es un caso de COVID-19 según el catálogo "CLASIFICACION_FINAL_COVID".
+1: CASO DE COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA,
+2:CASO DE COVID-19 CONFIRMADO POR COMITÉ DE  DICTAMINACIÓN,
+3:CASO DE SARS-COV-2  CONFIRMADO
+DIABETES: Identifica si el paciente tiene un diagnóstico de diabetes. 1 = SI
+OBESIDAD: Identifica si el paciente tiene diagnóstico de obesidad. 1 = SI
+HIPERTENSION:Identifica si el paciente tiene un diagnóstico de hipertensión. 1 = SI
+Responsable de la consulta: Pérez Iturbe Carolina
+Comentarios:
+-CAST: Esta funcion convierte una expresión de un tipo de datos a otro
+-CASE: Evalúa una lista de condiciones y devuelve una de las varias expresiones de resultado posibles.
+La expresión CASE sencilla compara una expresión con un conjunto de expresiones sencillas para determinar el resultado 
+admite un argumento ELSE opcional.
+*****************************************/ 
+
+SELECT 
+    'Diabetes' AS Morbilidad,
+    CAST((SUM(CASE WHEN diabetes = 1 AND clasificacion_final IN ('1', '2', '3') THEN 1 ELSE 0 END) * 100.0 / SUM(CASE WHEN clasificacion_final IN ('1', '2', '3') THEN 1 ELSE 0 END)) AS DECIMAL(5, 2)) AS Porcentaje
+FROM 
+    datoscovid
+
+UNION ALL
+
+SELECT 
+    'Obesidad' AS Morbilidad,
+    CAST((SUM(CASE WHEN obesidad = 1 AND clasificacion_final IN ('1', '2', '3') THEN 1 ELSE 0 END) * 100.0 / SUM(CASE WHEN clasificacion_final IN ('1', '2', '3') THEN 1 ELSE 0 END)) AS DECIMAL(5, 2)) AS Porcentaje
+FROM 
+    datoscovid
+
+UNION ALL
+
+SELECT 
+    'Hipertension' AS Morbilidad,
+    CAST((SUM(CASE WHEN hipertension = 1 AND clasificacion_final IN ('1', '2', '3') THEN 1 ELSE 0 END) * 100.0 / SUM(CASE WHEN clasificacion_final IN ('1', '2', '3') THEN 1 ELSE 0 END)) AS DECIMAL(5, 2)) AS Porcentaje
+FROM 
+    datoscovid;
+
+/*****************************************
+4.-Listar los municipios que no tengan casos confirmados  en todas las morbilidades: hipertensión, diabetes, obesidad y tabaquismo.
+Requisitos:
+Significado de los valores de los catálogos:
+ENTIDAD_RES: Identifica la entidad de residencia del paciente.
+CLASIFICACION_FINAL: Identifica si el paciente es un caso de COVID-19 según el catálogo "CLASIFICACION_FINAL_COVID".
+1: CASO DE COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA,
+2:CASO DE COVID-19 CONFIRMADO POR COMITÉ DE  DICTAMINACIÓN,
+3:CASO DE SARS-COV-2  CONFIRMADO
+MUNICIPIO_RES:Identifica el municipio de residencia del paciente.
+DIABETES: Identifica si el paciente tiene un diagnóstico de diabetes. 1 = SI
+OBESIDAD: Identifica si el paciente tiene diagnóstico de obesidad. 1 = SI
+HIPERTENSION:Identifica si el paciente tiene un diagnóstico de hipertensión. 1 = SI
+TABAQUISMO: Identifica si el paciente tiene hábito de tabaquismo. 1 = SI
+Responsable de la consulta: Pérez Iturbe Carolina
+Comentarios: Sin comentarios
+*****************************************/ 
+select distinct 
+				Entidad_Res, Municipio_res
+from
+	datoscovid
+where
+	CLASIFICACION_FINAL not in(1,2,3) and HIPERTENSION=1 and OBESIDAD=1 and diabetes=1 and TABAQUISMO=1
+
+/*****************************************
+--5.- Listar los estados con más casos recuperados con neumonia.
+Requisitos:
+Significado de los valores de los catálogos:
+ENTIDAD_RES: Identifica la entidad de residencia del paciente.
+FECHA_DEF:Identifica la fecha en que el paciente falleció, en caso de recuperación se coloca 9999-99-99
 CLASIFICACION_FINAL 
 1: CASO DE COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA,
 2:CASO DE COVID-19 CONFIRMADO POR COMITÉ DE  DICTAMINACIÓN,
 3:CASO DE SARS-COV-2  CONFIRMADO
- NEUMONIA:
- 1: SI.
- Responsable de la consulta:Pérez Iturbe Carolina
- Comentarios: 
- -TOP: Limita las filas devueltas en un conjunto de resultados de la consulta a un número o porcentaje de filas especificado en SQL Server.
+NEUMONIA: Identifica si al paciente se le diagnosticó con neumonía. 1 = SI.
+Responsable de la consulta:Pérez Iturbe Carolina
+Comentarios: 
+-TOP: Limita las filas devueltas en un conjunto de resultados de la consulta a un número o porcentaje de filas especificado en SQL Server.
+Esta consulta no se divide por años ya que esto no se especifica es el resultado total, se muestran unicamente 3 ya que 
+la consulta dice listar los estados con más casos recuperados y no se epecifica cuantos. 
 *****************************************/ 
 WITH CasosRecuperados AS (
     SELECT 
@@ -99,20 +181,70 @@ SELECT TOP 3
 FROM CasosRecuperados
 ORDER BY num_casos_recuperados_con_neumonia DESC;  
 
-
 /*****************************************
- 6.- Listar el total de casos confirmados/sospechosos por estado en cada uno de los años registrados en la base de datos.
- Requisitos:
- Significado de los valores de los catálogos.
- Responsable de la consulta: Pérez Iturbe Carolina
- Comentarios: Sin comentarios
+6.- Listar el total de casos confirmados/sospechosos por estado en cada uno de los años registrados en la base de datos.
+Requisitos:
+Significado de los valores de los catálogos:
+ENTIDAD_RES: Identifica la entidad de residencia del paciente.
+FECHA_INGRESO: Identifica la fecha de ingreso del paciente a la unidad de atención.
+CLASIFICACION_FINAL: Identifica si el paciente es un caso de COVID-19 según el catálogo "CLASIFICACION_FINAL_COVID".
+1: CASO DE COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA,
+2: CASO DE COVID-19 CONFIRMADO POR COMITÉ DE  DICTAMINACIÓN,
+3: CASO DE SARS-COV-2  CONFIRMADO
+6: CASO SOSPECHOSO
+Responsable de la consulta: Pérez Iturbe Carolina
+Comentarios: Sin comentarios
 *****************************************/ 
 select year(FECHA_INGRESO) as año, count(*) num_casos, ENTIDAD_RES
 from datoscovid
 where CLASIFICACION_FINAL in ('1', '2','3','6') 
 group by year(FECHA_INGRESO), ENTIDAD_RES
 order by año, ENTIDAD_RES asc
-7.-
+
+
+/*****************************************
+--7.-Para el año 2020 y 2021 cual fue el mes con mas casos registrados, confirmados, sospechosos, por estado registrado en la base de datos
+Requisitos:
+Significado de los valores de los catálogos:
+ENTIDAD_RES: Identifica la entidad de residencia del paciente.
+FECHA_INGRESO: Identifica la fecha de ingreso del paciente a la unidad de atención.
+CLASIFICACION_FINAL: Identifica si el paciente es un caso de COVID-19 según el catálogo "CLASIFICACION_FINAL_COVID".
+1: CASO DE COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA,
+2:CASO DE COVID-19 CONFIRMADO POR COMITÉ DE  DICTAMINACIÓN,
+3:CASO DE SARS-COV-2  CONFIRMADO
+6: CASO SOSPECHOSO
+Responsable de la consulta: Pérez Iturbe Carolina
+Comentarios: Sin comentarios
+*****************************************/ 
+WITH CasosPorMes AS (
+SELECT 
+     ENTIDAD_RES, YEAR(FECHA_INGRESO) AS Año, MONTH(FECHA_INGRESO) AS Mes, 
+     COUNT(*) AS total_casos
+FROM 
+     datoscovid
+WHERE 
+     CLASIFICACION_FINAL IN ('1', '2', '3', '6') AND YEAR(FECHA_INGRESO) IN (2020, 2021) 
+GROUP BY 
+     ENTIDAD_RES, YEAR(FECHA_INGRESO), MONTH(FECHA_INGRESO)
+),
+Ranking AS (
+    SELECT 
+        ENTIDAD_RES, Año, Mes, total_casos,
+        ROW_NUMBER() OVER (PARTITION BY ENTIDAD_RES, Año ORDER BY total_casos DESC) AS ranking
+    FROM 
+        CasosPorMes
+)
+SELECT 
+    CasospM.ENTIDAD_RES, CasospM.Año, CasospM.Mes, CasospM.total_casos
+FROM 
+    Ranking CasospM
+JOIN 
+    cat_entidades ce ON CasospM.ENTIDAD_RES = ce.clave
+WHERE 
+    CasospM.ranking = 1 
+ORDER BY 
+    CasospM.Año;
+		
 /***************************************** 
 Número de consulta. 8.-Listar el municipio con menos defunciones en el mes con más casos confirmados con 
 neumonía en los años 2020 y 2021. 
