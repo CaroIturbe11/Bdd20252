@@ -84,8 +84,139 @@ where CLASIFICACION_FINAL in ('1', '2','3','7')
 group by year(FECHA_INGRESO), ENTIDAD_RES
 order by año, ENTIDAD_RES asc
 7.-
+	/***************************************** 
+	Número de consulta. 8.-Listar el municipio con menos defunciones en el mes con más casos confirmados con 
+							neumonía en los años 2020 y 2021. 
+	Requisitos:  
+	Significado de los valores de los catálogos. 
+	Responsable de la consulta.  
+	Comentarios: -- aquí, explicar las instrucciones adicionales  
+	Utilizadas y no explicadas en clase.    
+	*****************************************/ 
+	select count (*) from datoscovid where CLASIFICACION_FINAL = '1' and NEUMONIA = '1' and FECHA_INGRESO between '2020-01-01' and '2021-12-31'
+	 /* 17,981 casos con neumonia*/
+	select count (*) 
+		from datoscovid 
+		where CLASIFICACION_FINAL = '1' and NEUMONIA = '1' and FECHA_INGRESO between '2020-01-01' and '2021-12-31'and FECHA_DEF != '9999-99-99' and ENTIDAD_RES = '1'
+
+	WITH MesMaxCasos AS (
+		-- Paso 1: Obtener el mes con más casos de neumonía por estado
+		SELECT 
+			ENTIDAD_RES,
+			MONTH(FECHA_INGRESO) AS mes_max,
+			COUNT(*) AS total_casos
+		FROM datoscovid
+		WHERE CLASIFICACION_FINAL = '1' 
+			AND NEUMONIA = '1'
+			AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
+		GROUP BY ENTIDAD_RES, MONTH(FECHA_INGRESO)
+		HAVING COUNT(*) = (
+			SELECT MAX(casos)
+			FROM (
+				SELECT 
+					ENTIDAD_RES, 
+					MONTH(FECHA_INGRESO) AS mes, 
+					COUNT(*) AS casos
+				FROM datoscovid
+				WHERE CLASIFICACION_FINAL = '1' 
+					AND NEUMONIA = '1'
+					AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
+				GROUP BY ENTIDAD_RES, MONTH(FECHA_INGRESO)
+			) AS subquery
+			WHERE subquery.ENTIDAD_RES = datoscovid.ENTIDAD_RES
+		)
+	), MunicipioMenosDefunciones AS (
+		-- Paso 2: Encontrar el municipio con menos defunciones dentro del mes con más casos de neumonía
+		SELECT 
+			d.ENTIDAD_RES, 
+			d.MUNICIPIO_RES, 
+			COUNT(*) AS total_defunciones
+		FROM datoscovid d
+		JOIN MesMaxCasos m ON d.ENTIDAD_RES = m.ENTIDAD_RES AND MONTH(d.FECHA_INGRESO) = m.mes_max
+		WHERE d.FECHA_DEF != '9999-99-99'  -- Solo fallecidos
+		GROUP BY d.ENTIDAD_RES, d.MUNICIPIO_RES
+		HAVING COUNT(*) = (
+			SELECT MIN(defunciones)
+			FROM (
+				SELECT 
+					ENTIDAD_RES, 
+					MUNICIPIO_RES, 
+					COUNT(*) AS defunciones
+				FROM datoscovid
+				WHERE FECHA_DEF != '9999-99-99'
+					AND MONTH(FECHA_INGRESO) IN (SELECT mes_max FROM MesMaxCasos WHERE ENTIDAD_RES = datoscovid.ENTIDAD_RES)
+				GROUP BY ENTIDAD_RES, MUNICIPIO_RES
+			) AS subquery
+			WHERE subquery.ENTIDAD_RES = d.ENTIDAD_RES
+		)
+	)
+	SELECT * FROM MunicipioMenosDefunciones
+	ORDER BY ENTIDAD_RES;
 
 
+/***************************************** 
+Número de consulta. 9.-Listar el top 3 de municipios / ENTIDADES con menos casos recuperados en el año 2021. 
+Requisitos:  
+Significado de los valores de los catálogos. 
+	ENTIDAD_RES; 
+	FECHA_DEF;
+Responsable de la consulta.  
+Comentarios: -- aquí, explicar las instrucciones adicionales  
+Utilizadas y no explicadas en clase.    
+*****************************************/  
+SELECT TOP 3 
+    ENTIDAD_RES, 
+    COUNT(*) AS total_fallecimientos
+FROM datoscovid
+WHERE FECHA_INGRESO BETWEEN '2021-01-01' AND '2021-12-31' 
+    AND FECHA_DEF != '9999-99-99'
+GROUP BY ENTIDAD_RES
+ORDER BY total_fallecimientos DESC;
+
+/***************************************** 
+Número de consulta. 10. Listar el porcentaje de casos confirmado por género en los años 2020 y 2021. 
+Requisitos:  
+Significado de los valores de los catálogos. 
+Responsable de la consulta.  
+Comentarios: -- aquí, explicar las instrucciones adicionales  
+Utilizadas y no explicadas en clase.    
+*****************************************/  
+
+SELECT 
+    SEXO,
+    COUNT(*) AS total_casos,
+    CAST(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM datoscovid 
+                             WHERE CLASIFICACION_FINAL = '1' 
+                             AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31') AS DECIMAL(5,2)) AS porcentaje_casos
+FROM datoscovid
+WHERE CLASIFICACION_FINAL = '1' 
+    AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
+    AND SEXO IN ('1', '2')
+GROUP BY SEXO
+ORDER BY SEXO;
+
+/***************************************** 
+Número de consulta. 11. Listar el porcentaje de casos hospitalizados por estado en el año 2020. 
+Requisitos:  
+Significado de los valores de los catálogos. 
+	TIPO_PACIENTE = '2'
+Responsable de la consulta.  
+Comentarios: -- aquí, explicar las instrucciones adicionales  
+Utilizadas y no explicadas en clase.    
+*****************************************/ 
+SELECT 
+    ENTIDAD_RES, 
+    COUNT(*) AS total_hospitalizados,
+    CAST(COUNT(*) * 1.0 / (SELECT COUNT(*) FROM datoscovid 
+                           WHERE TIPO_PACIENTE = '2' 
+                           AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2020-12-31') 
+         AS DECIMAL(4,2)) AS porcentaje_hospitalizados
+FROM datoscovid
+WHERE TIPO_PACIENTE = '2' 
+    AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2020-12-31'
+    AND ENTIDAD_RES BETWEEN 1 AND 32
+GROUP BY ENTIDAD_RES
+ORDER BY ENTIDAD_RES;
 
 /***************************************** 
 Número de consulta. 12. Listar total de casos negativos por estado en los años 2020 y 2021. 
@@ -95,6 +226,15 @@ Responsable de la consulta.
 Comentarios: -- aquí, explicar las instrucciones adicionales  
 Utilizadas y no explicadas en clase.    
 *****************************************/  
+SELECT 
+    ENTIDAD_RES, 
+    COUNT(*) AS total_casos
+FROM datoscovid
+WHERE CLASIFICACION_FINAL = '7' 
+    AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
+    AND ENTIDAD_RES BETWEEN 01 AND 32 
+GROUP BY ENTIDAD_RES
+ORDER BY ENTIDAD_RES;
 
   
 /***************************************** 
