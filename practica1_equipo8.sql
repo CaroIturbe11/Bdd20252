@@ -69,7 +69,36 @@ WHERE rn = 1;
 
 3.-
 4.-
-5.-
+/*****************************************
+5.- Listar los estados con más casos recuperados con neumonia.
+Requisitos:
+Significado de los valores de los catálogos.
+CLASIFICACION_FINAL 
+1: CASO DE COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA,
+2:CASO DE COVID-19 CONFIRMADO POR COMITÉ DE  DICTAMINACIÓN,
+3:CASO DE SARS-COV-2  CONFIRMADO
+ NEUMONIA:
+ 1: SI.
+ Responsable de la consulta:Pérez Iturbe Carolina
+ Comentarios: 
+ -TOP: Limita las filas devueltas en un conjunto de resultados de la consulta a un número o porcentaje de filas especificado en SQL Server.
+*****************************************/ 
+WITH CasosRecuperados AS (
+    SELECT 
+        ENTIDAD_RES,
+        COUNT(*) AS num_casos_recuperados_con_neumonia
+    FROM datoscovid
+    WHERE CLASIFICACION_FINAL IN ('1', '2', '3') 
+          AND FECHA_DEF = '9999-99-99' 
+          AND NEUMONIA = '1' 
+    GROUP BY ENTIDAD_RES
+)
+SELECT TOP 3 
+    ENTIDAD_RES,
+    num_casos_recuperados_con_neumonia
+FROM CasosRecuperados
+ORDER BY num_casos_recuperados_con_neumonia DESC;  
+
 
 /*****************************************
  6.- Listar el total de casos confirmados/sospechosos por estado en cada uno de los años registrados en la base de datos.
@@ -84,74 +113,74 @@ where CLASIFICACION_FINAL in ('1', '2','3','7')
 group by year(FECHA_INGRESO), ENTIDAD_RES
 order by año, ENTIDAD_RES asc
 7.-
-	/***************************************** 
-	Número de consulta. 8.-Listar el municipio con menos defunciones en el mes con más casos confirmados con 
-							neumonía en los años 2020 y 2021. 
-	Requisitos:  
-	Significado de los valores de los catálogos. 
-	Responsable de la consulta.  
-	Comentarios: -- aquí, explicar las instrucciones adicionales  
-	Utilizadas y no explicadas en clase.    
-	*****************************************/ 
-	select count (*) from datoscovid where CLASIFICACION_FINAL = '1' and NEUMONIA = '1' and FECHA_INGRESO between '2020-01-01' and '2021-12-31'
-	 /* 17,981 casos con neumonia*/
-	select count (*) 
-		from datoscovid 
-		where CLASIFICACION_FINAL = '1' and NEUMONIA = '1' and FECHA_INGRESO between '2020-01-01' and '2021-12-31'and FECHA_DEF != '9999-99-99' and ENTIDAD_RES = '1'
+/***************************************** 
+Número de consulta. 8.-Listar el municipio con menos defunciones en el mes con más casos confirmados con 
+neumonía en los años 2020 y 2021. 
+Requisitos:  
+Significado de los valores de los catálogos. 
+Responsable de la consulta.  
+Comentarios: -- aquí, explicar las instrucciones adicionales  
+Utilizadas y no explicadas en clase.    
+*****************************************/ 
+select count (*) from datoscovid where CLASIFICACION_FINAL = '1' and NEUMONIA = '1' and FECHA_INGRESO between '2020-01-01' and '2021-12-31'
+ /* 17,981 casos con neumonia*/
+select count (*) 
+	from datoscovid 
+	where CLASIFICACION_FINAL = '1' and NEUMONIA = '1' and FECHA_INGRESO between '2020-01-01' and '2021-12-31'and FECHA_DEF != '9999-99-99' and ENTIDAD_RES = '1'
 
-	WITH MesMaxCasos AS (
-		-- Paso 1: Obtener el mes con más casos de neumonía por estado
-		SELECT 
-			ENTIDAD_RES,
-			MONTH(FECHA_INGRESO) AS mes_max,
-			COUNT(*) AS total_casos
-		FROM datoscovid
-		WHERE CLASIFICACION_FINAL = '1' 
-			AND NEUMONIA = '1'
-			AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
-		GROUP BY ENTIDAD_RES, MONTH(FECHA_INGRESO)
-		HAVING COUNT(*) = (
-			SELECT MAX(casos)
-			FROM (
-				SELECT 
-					ENTIDAD_RES, 
-					MONTH(FECHA_INGRESO) AS mes, 
-					COUNT(*) AS casos
-				FROM datoscovid
-				WHERE CLASIFICACION_FINAL = '1' 
-					AND NEUMONIA = '1'
-					AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
-				GROUP BY ENTIDAD_RES, MONTH(FECHA_INGRESO)
-			) AS subquery
-			WHERE subquery.ENTIDAD_RES = datoscovid.ENTIDAD_RES
-		)
-	), MunicipioMenosDefunciones AS (
-		-- Paso 2: Encontrar el municipio con menos defunciones dentro del mes con más casos de neumonía
-		SELECT 
-			d.ENTIDAD_RES, 
-			d.MUNICIPIO_RES, 
-			COUNT(*) AS total_defunciones
-		FROM datoscovid d
-		JOIN MesMaxCasos m ON d.ENTIDAD_RES = m.ENTIDAD_RES AND MONTH(d.FECHA_INGRESO) = m.mes_max
-		WHERE d.FECHA_DEF != '9999-99-99'  -- Solo fallecidos
-		GROUP BY d.ENTIDAD_RES, d.MUNICIPIO_RES
-		HAVING COUNT(*) = (
-			SELECT MIN(defunciones)
-			FROM (
-				SELECT 
-					ENTIDAD_RES, 
-					MUNICIPIO_RES, 
-					COUNT(*) AS defunciones
-				FROM datoscovid
-				WHERE FECHA_DEF != '9999-99-99'
-					AND MONTH(FECHA_INGRESO) IN (SELECT mes_max FROM MesMaxCasos WHERE ENTIDAD_RES = datoscovid.ENTIDAD_RES)
-				GROUP BY ENTIDAD_RES, MUNICIPIO_RES
-			) AS subquery
-			WHERE subquery.ENTIDAD_RES = d.ENTIDAD_RES
-		)
+WITH MesMaxCasos AS (
+	-- Paso 1: Obtener el mes con más casos de neumonía por estado
+	SELECT 
+		ENTIDAD_RES,
+		MONTH(FECHA_INGRESO) AS mes_max,
+		COUNT(*) AS total_casos
+	FROM datoscovid
+	WHERE CLASIFICACION_FINAL = '1' 
+		AND NEUMONIA = '1'
+		AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
+	GROUP BY ENTIDAD_RES, MONTH(FECHA_INGRESO)
+	HAVING COUNT(*) = (
+		SELECT MAX(casos)
+		FROM (
+			SELECT 
+				ENTIDAD_RES, 
+				MONTH(FECHA_INGRESO) AS mes, 
+				COUNT(*) AS casos
+			FROM datoscovid
+			WHERE CLASIFICACION_FINAL = '1' 
+				AND NEUMONIA = '1'
+				AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
+			GROUP BY ENTIDAD_RES, MONTH(FECHA_INGRESO)
+		) AS subquery
+		WHERE subquery.ENTIDAD_RES = datoscovid.ENTIDAD_RES
 	)
-	SELECT * FROM MunicipioMenosDefunciones
-	ORDER BY ENTIDAD_RES;
+), MunicipioMenosDefunciones AS (
+-- Paso 2: Encontrar el municipio con menos defunciones dentro del mes con más casos de neumonía
+	SELECT 
+		d.ENTIDAD_RES, 
+		d.MUNICIPIO_RES, 
+		COUNT(*) AS total_defunciones
+	FROM datoscovid d
+	JOIN MesMaxCasos m ON d.ENTIDAD_RES = m.ENTIDAD_RES AND MONTH(d.FECHA_INGRESO) = m.mes_max
+	WHERE d.FECHA_DEF != '9999-99-99'  -- Solo fallecidos
+	GROUP BY d.ENTIDAD_RES, d.MUNICIPIO_RES
+	HAVING COUNT(*) = (
+		SELECT MIN(defunciones)
+		FROM (
+			SELECT 
+				ENTIDAD_RES, 
+				MUNICIPIO_RES, 
+				COUNT(*) AS defunciones
+			FROM datoscovid
+			WHERE FECHA_DEF != '9999-99-99'
+				AND MONTH(FECHA_INGRESO) IN (SELECT mes_max FROM MesMaxCasos WHERE ENTIDAD_RES = datoscovid.ENTIDAD_RES)
+			GROUP BY ENTIDAD_RES, MUNICIPIO_RES
+		) AS subquery
+		WHERE subquery.ENTIDAD_RES = d.ENTIDAD_RES
+	)
+)
+SELECT * FROM MunicipioMenosDefunciones
+ORDER BY ENTIDAD_RES;
 
 
 /***************************************** 
