@@ -109,7 +109,7 @@ ORDER BY num_casos_recuperados_con_neumonia DESC;
 *****************************************/ 
 select year(FECHA_INGRESO) as año, count(*) num_casos, ENTIDAD_RES
 from datoscovid
-where CLASIFICACION_FINAL in ('1', '2','3','7') 
+where CLASIFICACION_FINAL in ('1', '2','3','6') 
 group by year(FECHA_INGRESO), ENTIDAD_RES
 order by año, ENTIDAD_RES asc
 7.-
