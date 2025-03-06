@@ -245,8 +245,6 @@ SELECT
     CasospM.ENTIDAD_RES, CasospM.Año, CasospM.Mes, CasospM.total_casos
 FROM 
     Ranking CasospM
-JOIN 
-    cat_entidades ce ON CasospM.ENTIDAD_RES = ce.clave
 WHERE 
     CasospM.ranking = 1 
 ORDER BY 
