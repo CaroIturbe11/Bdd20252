@@ -500,3 +500,4 @@ WITH conteo AS (
 SELECT * FROM conteo
 ORDER BY casos DESC;
 
+/*actualizaocion de laporatorio*/
