@@ -214,7 +214,14 @@ CLASIFICACION_FINAL: Identifica si el paciente es un caso de COVID-19 según el 
 3:CASO DE SARS-COV-2  CONFIRMADO
 6: CASO SOSPECHOSO
 Responsable de la consulta: Pérez Iturbe Carolina
-Comentarios: Sin comentarios
+Comentarios: 
+-ROW_NUMBER(): Enumera los resultados de un conjunto de resultados.
+Concretamente, devuelve el número secuencial de una fila dentro de una partición
+de un conjunto de resultados, empezando por 1 para la primera fila de cada partición.
+-OVER: Define una ventana o un conjunto especificado por el usuario de
+filas dentro de un conjunto de resultados de consulta.
+-PARTITION BY: Divide el conjunto de resultados de la consulta en particiones. La 
+función se aplica a cada partición por separado y el cálculo se reinicia para cada partición.
 *****************************************/ 
 WITH CasosPorMes AS (
 SELECT 
