@@ -467,35 +467,29 @@ Número de consulta.	 14
 Requisitos:  ninguno
 Significado de los valores de los catálogos; RESULTADO_LAB = '1' = POSITIVO A SARS-COV-2 , FECHA_DEF = '9999-99-99' = No murio
 Responsable de la consulta.  oscar daniel de jesus lucio
-Comentarios: -- WHIT =
-				UNION = 
-				UNION ALL =
+-CASE: Evalúa una lista de condiciones y devuelve una de las varias expresiones de resultado posibles. 
+La expresión CASE sencilla compara una expresión con un conjunto de expresiones sencillas para determinar el resultado admite un argumento ELSE opcional. 
+-GROUP BY: combina registros con valores idénticos en la lista de campos especificados en un único registro. 
 *****************************************/ 
-
-WITH conteo AS (
-    SELECT 
-        'TODOS' AS Rangos_de_edad, COUNT(*) AS casos FROM datoscovid 
-        WHERE FECHA_INGRESO < '2022-01-01' AND RESULTADO_LAB = '1' AND FECHA_DEF != '9999-99-99'
-    UNION ALL
-    SELECT 'infantes', COUNT(*) FROM datoscovid 
-        WHERE EDAD < 12 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
-    UNION ALL
-    SELECT 'adolescencia', COUNT(*) FROM datoscovid 
-        WHERE EDAD BETWEEN 13 AND 18 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
-    UNION ALL
-    SELECT 'adultez_joven', COUNT(*) FROM datoscovid 
-        WHERE EDAD BETWEEN 19 AND 39 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
-    UNION ALL
-    SELECT 'madurez', COUNT(*) FROM datoscovid 
-        WHERE EDAD BETWEEN 40 AND 49 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
-    UNION ALL
-    SELECT 'adultez_tardia', COUNT(*) FROM datoscovid 
-        WHERE EDAD BETWEEN 50 AND 79 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
-    UNION ALL
-    SELECT 'vejez', COUNT(*) FROM datoscovid 
-        WHERE EDAD > 80 AND FECHA_INGRESO < '2022-01-01' AND [CLASIFICACION_FINAL] = '1' AND FECHA_DEF != '9999-99-99'
-)
-SELECT * FROM conteo
-ORDER BY casos DESC;
-
-/*actualizaocion de laporatorio*/
+SELECT 
+    CASE 
+        WHEN EDAD <= 12 THEN 'NIÑOS'
+        WHEN EDAD BETWEEN 13 AND 18 THEN 'ADOLESCENTES'
+        WHEN EDAD BETWEEN 19 AND 69 THEN 'ADULTOS'
+        WHEN EDAD >= 70 THEN 'ADULTOS MAYORES'
+        ELSE 'SIN CLASIFICAR'
+    END AS grupo_edad,    
+    COUNT(CASE WHEN YEAR(FECHA_DEF) = 2020 THEN 1 END) AS defunciones_2020,
+    COUNT(CASE WHEN YEAR(FECHA_DEF) = 2021 THEN 1 END) AS defunciones_2021
+FROM datoscovid
+WHERE CLASIFICACION_FINAL = '1' 
+    AND FECHA_DEF BETWEEN '2020-01-01' AND '2021-12-31'    
+GROUP BY 
+    CASE 
+        WHEN EDAD <= 12 THEN 'NIÑOS'
+        WHEN EDAD BETWEEN 13 AND 18 THEN 'ADOLESCENTES'
+        WHEN EDAD BETWEEN 19 AND 69 THEN 'ADULTOS'
+        WHEN EDAD >= 70 THEN 'ADULTOS MAYORES'
+        ELSE 'SIN CLASIFICAR'
+    END
+ORDER BY defunciones_2020 DESC, defunciones_2021 DESC;
