@@ -341,19 +341,34 @@ ORDER BY total_fallecimientos DESC;
 
 /***************************************** 
 Número de consulta. 10. Listar el porcentaje de casos confirmado por género en los años 2020 y 2021. 
-Requisitos:  
-Significado de los valores de los catálogos. 
-Responsable de la consulta.  
-Comentarios: -- aquí, explicar las instrucciones adicionales  
-Utilizadas y no explicadas en clase.    
+Requisitos:  N/A
+FECHA_INGRESO; Identifica la fecha de ingreso del paciente a la unidad de atención. 
+CLASIFICACION_FINAL = '1' es CASO DE COVID-19 CONFIRMADO   
+Responsable de la consulta.		Oscar Daniel De Jesus Lucio
+ROUND; La función ROUND redondea los números hasta el valor entero o decimal más cercano 
 *****************************************/  
 
+WITH total_por_anio AS (
+    SELECT 
+        YEAR(FECHA_INGRESO) AS anio, 
+        COUNT(*) AS total
+    FROM datoscovid
+    WHERE CLASIFICACION_FINAL = '1' 
+        AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
+    GROUP BY YEAR(FECHA_INGRESO)
+)
 SELECT 
     SEXO,
-    COUNT(*) AS total_casos,
-    CAST(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM datoscovid 
-                             WHERE CLASIFICACION_FINAL = '1' 
-                             AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31') AS DECIMAL(5,2)) AS porcentaje_casos
+    COUNT(CASE WHEN YEAR(FECHA_INGRESO) = 2020 THEN 1 END) AS total_2020,
+    COUNT(CASE WHEN YEAR(FECHA_INGRESO) = 2021 THEN 1 END) AS total_2021,
+    ROUND(
+        COUNT(CASE WHEN YEAR(FECHA_INGRESO) = 2020 THEN 1 END) * 100.0 
+        / (SELECT total FROM total_por_anio WHERE anio = 2020), 2
+    ) AS porcentaje_2020,
+    ROUND(
+        COUNT(CASE WHEN YEAR(FECHA_INGRESO) = 2021 THEN 1 END) * 100.0 
+        / (SELECT total FROM total_por_anio WHERE anio = 2021), 2
+    ) AS porcentaje_2021
 FROM datoscovid
 WHERE CLASIFICACION_FINAL = '1' 
     AND FECHA_INGRESO BETWEEN '2020-01-01' AND '2021-12-31'
@@ -364,11 +379,11 @@ ORDER BY SEXO;
 /***************************************** 
 Número de consulta. 11. Listar el porcentaje de casos hospitalizados por estado en el año 2020. 
 Requisitos:  
-Significado de los valores de los catálogos. 
-	TIPO_PACIENTE = '2'
-Responsable de la consulta.  
-Comentarios: -- aquí, explicar las instrucciones adicionales  
-Utilizadas y no explicadas en clase.    
+TIPO_PACIENTE = '2' ; Hospitalizado 
+FECHA_INGRESO; Identifica la fecha de ingreso del paciente a la unidad de atención.
+Responsable de la consulta.  Oscar Daniel De Jesus Lucio
+Comentarios: --
+
 *****************************************/ 
 SELECT 
     ENTIDAD_RES, 
@@ -388,9 +403,8 @@ ORDER BY ENTIDAD_RES;
 Número de consulta. 12. Listar total de casos negativos por estado en los años 2020 y 2021. 
 Requisitos:  
 Significado de los valores de los catálogos. 
-Responsable de la consulta.  
-Comentarios: -- aquí, explicar las instrucciones adicionales  
-Utilizadas y no explicadas en clase.    
+Responsable de la consulta.  Oscar Daniel De Jesus Lucio
+SUM ; sumar conjuntos de datos y ver los resultados en una tabla. 
 *****************************************/  
 SELECT 
     ENTIDAD_RES, 
@@ -408,65 +422,51 @@ Número de consulta.	 13. Listar porcentajes de casos confirmados por género en
 						de 31 a 40 años, de 41 a 50 años, de 51 a 60 años y mayores a 60 años a nivel nacional. 
 Requisitos:  ninguno
 Significado de los valores de los catálogos; RESULTADO_LAB = '1' = POSITIVO A SARS-COV-2 , FECHA_DEF = '9999-99-99' = No murio
-Responsable de la consulta.  oscar daniel de jesus lucio
-Comentarios: -- CAST =
-				DECIMAL = 
-				THEN =
-				CASE =
+Responsable de la consulta.  Oscar Daniel De Jesus Lucio
+SUM ; sumar conjuntos de datos y ver los resultados en una tabla. 
+THEN; es el El resultado de una cláusula WHEN cuando se evalúa como true. 
+ 	[WHEN when_expression THEN then_expression] 
 *****************************************/ 
-SELECT 
-    -- Promedios por grupo de edad y género
-    CAST(hombre_edad_20_30 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_20_30,
-    CAST(hombre_edad_31_40 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_31_40,
-    CAST(hombre_edad_41_50 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_41_50,
-    CAST(hombre_edad_51_60 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_51_60,
-    CAST(hombre_edad_mayor_60 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_H_mayor_60,	
-    CAST(mujer_edad_20_30 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_20_30,
-    CAST(mujer_edad_31_40 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_31_40,
-    CAST(mujer_edad_41_50 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_41_50,
-    CAST(mujer_edad_51_60 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_51_60,
-    CAST(mujer_edad_mayor_60 * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_M_mayor_60, 
 
-    -- Sumas de hombres, mujeres y total de casos
-    hombre_total,
-    mujer_total,
-    total_casos,
-
-    -- Promedio de cada grupo sobre el total
-    CAST(hombre_total * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_Hombres,
-    CAST(mujer_total * 1.0 / total_casos AS DECIMAL(4,2)) AS Prom_Mujeres
-
-FROM (
+WITH CTE AS (
     SELECT 
-        -- Conteo de hombres por grupo de edad
-        COUNT(CASE WHEN edad BETWEEN 20 AND 30 AND SEXO = '1' THEN 1 END) AS hombre_edad_20_30,
-        COUNT(CASE WHEN edad BETWEEN 31 AND 40 AND SEXO = '1' THEN 1 END) AS hombre_edad_31_40,
-        COUNT(CASE WHEN edad BETWEEN 41 AND 50 AND SEXO = '1' THEN 1 END) AS hombre_edad_41_50,
-        COUNT(CASE WHEN edad BETWEEN 51 AND 60 AND SEXO = '1' THEN 1 END) AS hombre_edad_51_60,
-        COUNT(CASE WHEN edad > 60 AND SEXO = '1' THEN 1 END) AS hombre_edad_mayor_60,
-
-        -- Conteo de mujeres por grupo de edad
-        COUNT(CASE WHEN edad BETWEEN 20 AND 30 AND SEXO = '2' THEN 1 END) AS mujer_edad_20_30,
-        COUNT(CASE WHEN edad BETWEEN 31 AND 40 AND SEXO = '2' THEN 1 END) AS mujer_edad_31_40,
-        COUNT(CASE WHEN edad BETWEEN 41 AND 50 AND SEXO = '2' THEN 1 END) AS mujer_edad_41_50,
-        COUNT(CASE WHEN edad BETWEEN 51 AND 60 AND SEXO = '2' THEN 1 END) AS mujer_edad_51_60,
-        COUNT(CASE WHEN edad > 60 AND SEXO = '2' THEN 1 END) AS mujer_edad_mayor_60,
-
-        -- Suma total de hombres y mujeres
-        COUNT(CASE WHEN SEXO = '1' THEN 1 END) AS hombre_total,
-        COUNT(CASE WHEN SEXO = '2' THEN 1 END) AS mujer_total,
-
-        -- Total de casos (hombres + mujeres)
-        COUNT(*) AS total_casos
-
+        CASE 
+            WHEN EDAD BETWEEN 20 AND 30 THEN '20-30'
+            WHEN EDAD BETWEEN 31 AND 40 THEN '31-40'
+            WHEN EDAD BETWEEN 41 AND 50 THEN '41-50'
+            WHEN EDAD BETWEEN 51 AND 60 THEN '51-60'
+            WHEN EDAD >= 61 THEN '61+'
+        END AS rango_edad,
+        SEXO,
+        COUNT(*) AS total
     FROM datoscovid
-) AS T;
+    WHERE EDAD >= 20 AND CLASIFICACION_FINAL = '1'
+    GROUP BY 
+        CASE 
+            WHEN EDAD BETWEEN 20 AND 30 THEN '20-30'
+            WHEN EDAD BETWEEN 31 AND 40 THEN '31-40'
+            WHEN EDAD BETWEEN 41 AND 50 THEN '41-50'
+            WHEN EDAD BETWEEN 51 AND 60 THEN '51-60'
+            WHEN EDAD >= 61 THEN '61+'
+        END, 
+        SEXO
+)
+SELECT 
+    rango_edad,
+    SUM(CASE WHEN SEXO = '1' THEN total ELSE 0 END) AS total_mujeres,
+    SUM(CASE WHEN SEXO = '2' THEN total ELSE 0 END) AS total_hombres,
+    SUM(total) AS total_rango,
+    CAST(SUM(CASE WHEN SEXO = '1' THEN total ELSE 0 END) * 100.0 / SUM(total) AS DECIMAL(5,2)) AS porcentaje_mujeres,
+    CAST(SUM(CASE WHEN SEXO = '2' THEN total ELSE 0 END) * 100.0 / SUM(total) AS DECIMAL(5,2)) AS porcentaje_hombres
+FROM CTE
+GROUP BY rango_edad
+ORDER BY rango_edad;
 
 /***************************************** 
 Número de consulta.	 14 
 Requisitos:  ninguno
 Significado de los valores de los catálogos; RESULTADO_LAB = '1' = POSITIVO A SARS-COV-2 , FECHA_DEF = '9999-99-99' = No murio
-Responsable de la consulta.  oscar daniel de jesus lucio
+Responsable de la consulta.  Oscar Daniel De Jesus Lucio
 -CASE: Evalúa una lista de condiciones y devuelve una de las varias expresiones de resultado posibles. 
 La expresión CASE sencilla compara una expresión con un conjunto de expresiones sencillas para determinar el resultado admite un argumento ELSE opcional. 
 -GROUP BY: combina registros con valores idénticos en la lista de campos especificados en un único registro. 
