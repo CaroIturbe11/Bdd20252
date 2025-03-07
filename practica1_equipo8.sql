@@ -253,18 +253,15 @@ ORDER BY
 /***************************************** 
 Número de consulta. 8.-Listar el municipio con menos defunciones en el mes con más casos confirmados con 
 neumonía en los años 2020 y 2021. 
-Requisitos:  
-Significado de los valores de los catálogos. 
-Responsable de la consulta.  
-Comentarios: -- aquí, explicar las instrucciones adicionales  
-Utilizadas y no explicadas en clase.    
+Requisitos:  N/A
+ENTIDAD_RES; 
+MUNICIPIO_RES; Identifica el municipio de residencia del paciente. 
+CLASIFICACION_FINAL = ‘1’; COVID-19 CONFIRMADO POR ASOCIACIÓN CLÍNICA EPIDEMIOLÓGICA 
+NEUMONIA = '1' = SI ,Identifica si al paciente se le diagnosticó con neumonía. 
+Responsable de la consulta. Pérez Iturbe Carolina  
+MONTH ; devuelve la parte correspondiente al mes de un valor. 
+HAVING; es una cláusula que se utiliza para filtrar los resultados de una consulta GROUP BY.   
 *****************************************/ 
-select count (*) from datoscovid where CLASIFICACION_FINAL = '1' and NEUMONIA = '1' and FECHA_INGRESO between '2020-01-01' and '2021-12-31'
- /* 17,981 casos con neumonia*/
-select count (*) 
-	from datoscovid 
-	where CLASIFICACION_FINAL = '1' and NEUMONIA = '1' and FECHA_INGRESO between '2020-01-01' and '2021-12-31'and FECHA_DEF != '9999-99-99' and ENTIDAD_RES = '1'
-
 WITH MesMaxCasos AS (
 	-- Paso 1: Obtener el mes con más casos de neumonía por estado
 	SELECT 
@@ -319,16 +316,15 @@ WITH MesMaxCasos AS (
 SELECT * FROM MunicipioMenosDefunciones
 ORDER BY ENTIDAD_RES;
 
-
 /***************************************** 
 Número de consulta. 9.-Listar el top 3 de municipios / ENTIDADES con menos casos recuperados en el año 2021. 
-Requisitos:  
-Significado de los valores de los catálogos. 
-	ENTIDAD_RES; 
-	FECHA_DEF;
-Responsable de la consulta.  
-Comentarios: -- aquí, explicar las instrucciones adicionales  
-Utilizadas y no explicadas en clase.    
+Requisitos:  N/A
+ENTIDAD_RES; Identifica la entidad de residencia del paciente. 
+FECHA_INGRESO; Identifica la fecha de ingreso del paciente a la unidad de atención. 
+FECHA_DEF;  si es ‘9999-99-99’ entonces no murio 
+Responsable de la consulta.		Oscar Daniel De Jesus Lucio
+GROUP BY agrupa filas con valores idénticos en una o más columnas. 
+ORDER BY; ordena los registros resultantes de una consulta por un campo o campos especificados en orden ascendente o descendente. 
 *****************************************/  
 SELECT TOP 3 
     ENTIDAD_RES, 
